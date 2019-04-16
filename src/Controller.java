@@ -54,11 +54,15 @@ public class Controller {
         });
 
         undoBtn.setOnAction(actionEvent -> {
-            manager.undo();
             String value = (String) manager.getCurrentChangeable().value();
-            System.out.println("$$$$");
-            System.out.println(value);
-            System.out.println("$$$$");
+            manager.undo();
+            textArea.setText(value);
+        });
+
+        redoBtn.setOnAction(actionEvent -> {
+            String value = (String) manager.getCurrentChangeable().value();
+            manager.redo();
+            textArea.setText(value);
         });
     }
 }

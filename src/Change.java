@@ -9,8 +9,8 @@
 public class Change implements Changeable<String> {
     private final String currentValue;
 
-    public Change(String v) {
-        this.currentValue = v;
+    public Change(String value) {
+        this.currentValue = value;
     }
 
     public Change() {
