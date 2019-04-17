@@ -1,9 +1,11 @@
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import java.util.List;
 
@@ -21,9 +23,6 @@ public class Controller {
     private Button clearBtn;
 
     private ChangeManager manager = new ChangeManager(5);
-    // буффер для получения данных из текстового поля для дальнейшей обработки,
-    // поиска изменений и помещения их в ChangeManager
-    private StringProperty textFieldBuffer = new SimpleStringProperty();
 
     @FXML
     void initialize() {
@@ -37,62 +36,60 @@ public class Controller {
 //
 //        textArea.setText(manager.getCurrent().value().toString());
 
-
-        // биндю проперти к текствому полю
-        textFieldBuffer.bind(textArea.textProperty());
-        // устанавливаю слушатель изменений в проперти
-        textFieldBuffer.addListener(stringChangeListener());
-
-
-//        textArea.focusedProperty().addListener(observable -> {
-//            if (textArea.isFocused()) {
-//                // биндю проперти к текствому полю
-//                textFieldBuffer.bind(textArea.textProperty());
-//                // устанавливаю слушатель изменений в проперти
-//                textFieldBuffer.addListener(stringChangeListener());
-//            } else {
-//                textFieldBuffer.removeListener(stringChangeListener());
-//                textFieldBuffer.unbind();
-//            }
-//        });
+        textArea.textProperty().addListener(stringChangeListener());
 
         // при нажатии кнопки отмены
-        undoBtn.setOnAction(actionEvent -> {
-            textFieldBuffer.removeListener(stringChangeListener());
-            textFieldBuffer.unbind();
-
-            // перемещаю указатель по списку изменений влево на одну позицию
-            manager.undo();
-            // получаю значение указателя
-            String value = manager.getCurrent().value().toString();
-            // обновляю текст в поле
-            textArea.setText(value);
-
-            showChangeList();
-
-            textFieldBuffer.bind(textArea.textProperty());
-            textFieldBuffer.addListener(stringChangeListener());
-        });
+        undoBtn.setOnAction(actionEvent -> undo());
 
         // при нажатии кнопки повтора
-        redoBtn.setOnAction(actionEvent -> {
-            // перемещаю указатель по списку изменений вправо на одну позицию
-            manager.redo();
-            // получаю значение указателя
-            String value = (String) manager.getCurrent().value();
-            // обновляю текст в поле
-            textArea.setText(value);
-        });
+        redoBtn.setOnAction(actionEvent -> redo());
 
-        clearBtn.setOnAction(actionEvent -> {
-            manager.clear();
-        });
+        // отчистка истории изменений
+        clearBtn.setOnAction(actionEvent -> manager.clear());
 
+        // замена стандартных горячих клавиш
+        textArea.addEventFilter(KeyEvent.KEY_PRESSED, keyEvent -> {
+            if (keyEvent.getCode() == KeyCode.Z && keyEvent.isControlDown()) {
+                if (keyEvent.isShiftDown()) {
+                    redo();
+                } else {
+                    undo();
+                }
+                textArea.positionCaret(textArea.getLength());
+                keyEvent.consume();
+            }
+        });
+    }
+
+    private void undo() {
+        textArea.textProperty().removeListener(stringChangeListener());
+
+        // перемещаю указатель по списку изменений влево на одну позицию
+        manager.undo();
+        // получаю значение указателя
+        String value = manager.getCurrent().value().toString();
+        // обновляю текст в поле
+        textArea.setText(value);
+        showChangeList();
+
+        textArea.textProperty().addListener(stringChangeListener());
+    }
+
+    private void redo() {
+        // перемещаю указатель по списку изменений вправо на одну позицию
+        manager.redo();
+        // получаю значение указателя
+        String value = (String) manager.getCurrent().value();
+        // обновляю текст в поле
+        textArea.setText(value);
     }
 
     private ChangeListener<String> stringChangeListener() {
         return (observableValue, oldValue, newValue) -> {
-//            // длина строки не поменялась, но какие-то символы внутри строки изменились
+
+            boolean stable00 = newValue.startsWith(oldValue) && newValue.length() > oldValue.length();
+
+            // длина строки не поменялась, но какие-то символы внутри строки изменились
 //            boolean changed00 = !newValue.equals(oldValue) && newValue.length() == oldValue.length();
 //
 //            // длина строки уменьшилась справа и длина строки больше чем длина текущего состояния в менеджере
@@ -108,25 +105,22 @@ public class Controller {
 //
 //            // длина строки увеличилась на какое-то количество символов, но не справа, а в середине или в начале
 //            boolean changed04 = !newValue.startsWith(oldValue) && newValue.length() > oldValue.length();
-//
-//            if (changed00 || changed01 || changed02 || changed03 || changed04) {
-//                if (newValue.length() > oldValue.length()) {
-//                    manager.addChangeable(new Change(newValue));
-//                } else {
-//                    manager.addChangeable(new Change(oldValue));
-//                }
-//                manager.addChangeable(new Change(oldValue));
-//
-//                showChangeList();
+
+
+//            if (stable00) {
+//                manager.refreshChangeable(new Change(newValue));
+//            } else {
+//                manager.addChangeable(new Change(newValue));
 //            }
 
-            boolean changed = true; //!newValue.equals(oldValue);
+//            if (changed00 || changed01 || changed02 || changed03 || changed04) {
+//                manager.addChangeable(new Change(newValue));
+//            } else {
+//                manager.refreshChangeable(new Change(newValue));
+//            }
 
-
-            if (changed && !newValue.equals(manager.getCurrent().value().toString())) {
-                manager.addChangeable(new Change(newValue));
-                showChangeList();
-            }
+            manager.addChangeable(new Change(newValue));
+            showChangeList();
         };
     }
 

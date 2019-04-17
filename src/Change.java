@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 /**
  * Artem Voytenko
  * 16.04.2019
@@ -30,5 +32,18 @@ public class Change implements Changeable<String> {
     @Override
     public String value() {
         return currentValue;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Change change = (Change) o;
+        return Objects.equals(currentValue, change.currentValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(currentValue);
     }
 }

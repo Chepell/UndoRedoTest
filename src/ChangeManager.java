@@ -46,6 +46,10 @@ public class ChangeManager {
      * Добавление объекта изменений в менеджер
      */
     public void addChangeable(Changeable changeable) {
+        // если добавляемое изменение уже есть в списке, то ничего не делать дальше
+        if (changeable.equals(currentIndex.changeable)) {
+            return;
+        }
         // Создаю новый узел с объектом изменений
         Node newNode = new Node(changeable);
         // Относительно текущего узла, на котором находится указатель, новый узел должен быть справа
@@ -65,6 +69,10 @@ public class ChangeManager {
             // Обнуляю у новой головы левый узел
             headNode.left = null;
         }
+    }
+
+    public void refreshChangeable(Changeable changeable) {
+        currentIndex.changeable = changeable;
     }
 
     /**
