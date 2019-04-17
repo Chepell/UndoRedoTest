@@ -9,35 +9,41 @@ import java.util.List;
  */
 
 public class ChangeManager {
-    // пустая родительская нода не содержащаа каки-либо изменений
-    private Node parentNode = new Node();
+    // пустая головная нода
+    private Node headNode = new Node();
     // нода на которой находится указатель
     private Node currentIndex;
+    // максимальное количество изменений хранимое в списке
+    private final int maxHistoryLength;
+    // счетчик добавленния в список изменений
+    private int changeCounter = 0;
 
     /**
      * Создание менеджера изменений
-     * установка указателя на родительскую ноду
+     * установка указателя на головную ноду
      */
-    public ChangeManager() {
-        currentIndex = parentNode;
+    public ChangeManager(int maxHistoryLength) {
+        this.maxHistoryLength = maxHistoryLength;
+        currentIndex = headNode;
     }
 
     /**
-     * Создание менеджера на основе другого менеджера
-     */
-    public ChangeManager(ChangeManager manager) {
-        currentIndex = manager.currentIndex;
-    }
-
-    /**
-     * Отчистка списка изменений выставлением ссылки на родительскую ноду
+     * Отчистка списка изменений выставлением ссылки на
+     * головную ноду и сброс счетчика добавленных изменений
      */
     public void clear() {
-        currentIndex = parentNode;
+        // Текущее значение сохраняю в головную ноду
+        headNode.changeable = currentIndex.changeable;
+        // Обнуляю ссылку справа, весь спискок теперь не имеет прямой ссылки и будет отчищен GC
+        headNode.right = null;
+        // Установка указателя в головную ноду
+        currentIndex = headNode;
+        // Сброс счетчика добавленных изменений
+        changeCounter = 0;
     }
 
     /**
-     * Добавление объекта измений в менеджер
+     * Добавление объекта изменений в менеджер
      */
     public void addChangeable(Changeable changeable) {
         // Создаю новый узел с объектом изменений
@@ -48,85 +54,78 @@ public class ChangeManager {
         newNode.left = currentIndex;
         // Перемещаю указатель на новый узел
         currentIndex = newNode;
-    }
 
-    /**
-     * Проверка что указатель находится не на крайнем левом родительском узле
-     */
-    public boolean canUndo() {
-        return currentIndex != parentNode;
-    }
-
-    /**
-     * Проверка что справа от указателя есть узел
-     */
-    public boolean canRedo() {
-        return currentIndex.right != null;
+        // Если не достигнуто ограничение на длину хранимых изменений
+        if (changeCounter < maxHistoryLength) {
+            // обновляю счетчик
+            changeCounter++;
+        } else {
+            // Головной узел сдвигаю вправо
+            headNode = headNode.right;
+            // Обнуляю у новой головы левый узел
+            headNode.left = null;
+        }
     }
 
     /**
      * Отмена
      */
     public void undo() {
-        // Исключение, если отмена невозможна
-        if (!canUndo()) {
-            throw new IllegalStateException("Cannot undo. Index is out of range.");
+        if (canUndo()) {
+            // Сдвиг указателя на левый узел
+            moveLeft();
+            changeCounter--;
+            // Вызов метода интерфейса
+            currentIndex.changeable.undo();
         }
-        // Сдвиг указателя на левый узел
-        moveLeft();
-        // Вызов метода интерфейса
-        currentIndex.changeable.undo();
     }
 
     /**
      * Возврат
-     *
-     * @throws IllegalStateException if canRedo returns false.
      */
     public void redo() {
-        // Исключение, если возврат не возможен
-        if (!canRedo()) {
-            throw new IllegalStateException("Cannot redo. Index is out of range.");
+        if (canRedo()) {
+            // Сдвиг указателя на правый узел
+            moveRight();
+            changeCounter++;
+            // Вызов метода интерфейса для возврата
+            currentIndex.changeable.redo();
         }
-        // Сдвиг указателя на правый узел
-        moveRight();
-        // Вызов метода интерфейса для возврата
-        currentIndex.changeable.redo();
     }
 
     /**
-     * сдвиг указателя влево
-     *
-     * @throws IllegalStateException If the left index is null.
+     * Сдвиг указателя влево
      */
     private void moveLeft() {
-        // Исключение, если слева узел пустой
-        if (currentIndex.left == null) {
-            throw new IllegalStateException("Internal index set to null.");
-        }
-        // Указатель перемещаю на левый узел
         currentIndex = currentIndex.left;
     }
 
     /**
      * Сдвиг указателя вправо
-     *
-     * @throws IllegalStateException If the right index is null.
      */
     private void moveRight() {
-        // Исключение, если справа узел пустой
-        if (currentIndex.right == null) {
-            throw new IllegalStateException("Internal index set to null.");
-        }
-        // Указатель перемещаю на правый узел
         currentIndex = currentIndex.right;
+    }
+
+    /**
+     * Проверка что указатель находится не на крайнем левом головном узле
+     */
+    public boolean canUndo() {
+        return currentIndex != headNode;
+    }
+
+    /**
+     * Проверка что справа от указателя еще есть узел
+     */
+    public boolean canRedo() {
+        return currentIndex.right != null;
     }
 
     /**
      * Возвращает содержание узла на котором находится указатель
      * в виде объекта реализующего интерфейс Changeable
      */
-    public Changeable getCurrentChangeable() {
+    public <T> Changeable<T> getCurrent() {
         return currentIndex.changeable;
     }
 
@@ -138,7 +137,7 @@ public class ChangeManager {
         List<Changeable<T>> result = new ArrayList<>();
 
         // перемещаю указатель на первый элемент справа от родительского
-        Node rightNode = parentNode.right;
+        Node rightNode = headNode.right;
 
         // если справа что-то есть
         while (rightNode != null) {
@@ -147,7 +146,6 @@ public class ChangeManager {
             // сдвигаю указатель вправо
             rightNode = rightNode.right;
         }
-
         return result;
     }
 
@@ -159,7 +157,7 @@ public class ChangeManager {
         private Node left = null;
         private Node right = null;
         // Содержание узла в виде объекта реализующего интерфейс Changeable
-        private final Changeable changeable;
+        private Changeable changeable;
 
         // Конструктор для создания узлов и изменениями и добавления их в связанный список
         Node(Changeable changeable) {

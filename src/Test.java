@@ -8,7 +8,7 @@ import java.util.List;
 public class Test {
     public static void main(String[] args) {
         // создание менеджера изменений
-        ChangeManager manager = new ChangeManager();
+        ChangeManager manager = new ChangeManager(10);
 
         // добавление последовательных состояний строки в менеджер
         manager.addChangeable(new Change("1"));
