@@ -1,6 +1,4 @@
 import javafx.beans.value.ChangeListener;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
@@ -24,6 +22,10 @@ public class Controller {
 
     private ChangeManager manager = new ChangeManager(5);
 
+    private boolean spacePressed;
+
+    private boolean backspacePressed;
+
     @FXML
     void initialize() {
 //        manager.addChangeable(new Change("1"));
@@ -36,7 +38,7 @@ public class Controller {
 //
 //        textArea.setText(manager.getCurrent().value().toString());
 
-        textArea.textProperty().addListener(stringChangeListener());
+//        textArea.textProperty().addListener(stringChangeListener());
 
         // при нажатии кнопки отмены
         undoBtn.setOnAction(actionEvent -> undo());
@@ -59,11 +61,31 @@ public class Controller {
                 keyEvent.consume();
             }
         });
+
+
+        textArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
+            if (keyEvent.getCode() == KeyCode.SPACE && !spacePressed && !textArea.getText().isEmpty()) {
+                spacePressed = true;
+                manager.addChangeable(new Change(textArea.getText()));
+            } else if (keyEvent.getCode() == KeyCode.BACK_SPACE && !spacePressed && !textArea.getText().isEmpty()) {
+                backspacePressed = true;
+                manager.addChangeable(new Change(textArea.getText()));
+            } else if (keyEvent.getCode() != KeyCode.SPACE) {
+                if (spacePressed) {
+                    spacePressed = false;
+                }
+            } else if (keyEvent.getCode() != KeyCode.BACK_SPACE) {
+                if (backspacePressed) {
+                    backspacePressed = false;
+                }
+            }
+        });
     }
 
     private void undo() {
-        textArea.textProperty().removeListener(stringChangeListener());
-
+//        textArea.textProperty().removeListener(stringChangeListener());
+        // сохраняю текущее состояние в менеджер
+        manager.addChangeable(new Change(textArea.getText()));
         // перемещаю указатель по списку изменений влево на одну позицию
         manager.undo();
         // получаю значение указателя
@@ -72,7 +94,7 @@ public class Controller {
         textArea.setText(value);
         showChangeList();
 
-        textArea.textProperty().addListener(stringChangeListener());
+//        textArea.textProperty().addListener(stringChangeListener());
     }
 
     private void redo() {
