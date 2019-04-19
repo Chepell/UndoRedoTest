@@ -8,15 +8,11 @@ import java.util.Objects;
  * а нужно параметриховать каким-то объектом содержащим цитаты и текст в html
  */
 
-public class Change implements Changeable<String> {
+public class EditorStage implements Changeable<String> {
     private final String currentValue;
 
-    public Change(String value) {
+    public EditorStage(String value) {
         this.currentValue = value;
-    }
-
-    public Change() {
-        this.currentValue = "";
     }
 
     @Override
@@ -38,8 +34,8 @@ public class Change implements Changeable<String> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Change change = (Change) o;
-        return Objects.equals(currentValue, change.currentValue);
+        EditorStage editorStage = (EditorStage) o;
+        return Objects.equals(currentValue, editorStage.currentValue);
     }
 
     @Override

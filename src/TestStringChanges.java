@@ -36,7 +36,7 @@ public class TestStringChanges {
 
         if (changed00 || changed01 || changed02 || changed03 || changed04) {
             if (newValue.length() > oldValue.length()) {
-                changesStage = newValue; // это типа manager.addChangeable(oldValue)
+                changesStage = newValue; // это типа manager.addStage(oldValue)
             } else {
                 changesStage = oldValue;
             }

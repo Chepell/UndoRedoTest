@@ -8,13 +8,13 @@ import java.util.List;
  * Менеджер изменений
  */
 
-public class ChangeManager {
+public class EditorStageKeeper {
     // пустая головная нода
-    private Node headNode = new Node();
+    private Node headNode;
     // нода на которой находится указатель
     private Node currentIndex;
     // максимальное количество изменений хранимое в списке
-    private final int maxHistoryLength;
+    private final int MAX_HISTORY_LENGTH = 10;
     // счетчик добавленния в список изменений
     private int changeCounter = 0;
 
@@ -22,8 +22,8 @@ public class ChangeManager {
      * Создание менеджера изменений
      * установка указателя на головную ноду
      */
-    public ChangeManager(int maxHistoryLength) {
-        this.maxHistoryLength = maxHistoryLength;
+    public EditorStageKeeper(Changeable initialValue) {
+        headNode = new Node(initialValue);
         currentIndex = headNode;
     }
 
@@ -45,11 +45,12 @@ public class ChangeManager {
     /**
      * Добавление объекта изменений в менеджер
      */
-    public void addChangeable(Changeable changeable) {
+    public void addStage(Changeable changeable) {
         // если добавляемое изменение уже есть в списке, то ничего не делать дальше
         if (changeable.equals(currentIndex.changeable)) {
             return;
         }
+        System.out.println("Добавляю: " + changeable.value());
         // Создаю новый узел с объектом изменений
         Node newNode = new Node(changeable);
         // Относительно текущего узла, на котором находится указатель, новый узел должен быть справа
@@ -60,7 +61,7 @@ public class ChangeManager {
         currentIndex = newNode;
 
         // Если не достигнуто ограничение на длину хранимых изменений
-        if (changeCounter < maxHistoryLength) {
+        if (changeCounter < MAX_HISTORY_LENGTH) {
             // обновляю счетчик
             changeCounter++;
         } else {
@@ -173,8 +174,8 @@ public class ChangeManager {
         }
 
         // Конструктор для создания родительского узла списка
-        Node() {
-            changeable = new Change();
-        }
+//        Node() {
+//            changeable = new EditorStage();
+//        }
     }
 }

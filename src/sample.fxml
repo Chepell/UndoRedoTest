@@ -4,11 +4,11 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="230.0" prefWidth="269.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="230.0" prefWidth="292.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller">
     <children>
-        <TextArea fx:id="textArea" layoutX="15.0" layoutY="14.0" prefHeight="168.0" prefWidth="239.0" />
+        <TextArea fx:id="textArea" layoutX="15.0" layoutY="14.0" prefHeight="168.0" prefWidth="263.0" />
       <Button fx:id="undoBtn" layoutX="14.0" layoutY="191.0" mnemonicParsing="false" text="Undo" />
       <Button fx:id="redoBtn" layoutX="73.0" layoutY="191.0" mnemonicParsing="false" text="Redo" />
-      <Button fx:id="clearBtn" layoutX="130.0" layoutY="191.0" mnemonicParsing="false" text="Clear change history" />
+      <Button fx:id="clearBtn" layoutX="131.0" layoutY="191.0" mnemonicParsing="false" text="Clear editorStage history" />
     </children>
 </AnchorPane>
