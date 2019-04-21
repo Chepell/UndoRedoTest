@@ -5,7 +5,7 @@
 
 public interface Changeable<T> {
     /**
-     *
+     * отмена
      */
     void undo();
 
@@ -15,9 +15,12 @@ public interface Changeable<T> {
     void redo();
 
     /**
-     * возвращает значение поля содержащего текущее состояние
+     * значение поля содержащего текущее состояние
      */
     T value();
 
-
+    /**
+     * позиция каретки в текущем состоянии
+     */
+    int caretPosition();
 }

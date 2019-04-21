@@ -10,9 +10,11 @@ import java.util.Objects;
 
 public class EditorStage implements Changeable<String> {
     private final String currentValue;
+    private final int caretPosition;
 
-    public EditorStage(String value) {
+    public EditorStage(String value, int caretPosition) {
         this.currentValue = value;
+        this.caretPosition = caretPosition;
     }
 
     @Override
@@ -31,15 +33,26 @@ public class EditorStage implements Changeable<String> {
     }
 
     @Override
+    public int caretPosition() {
+        return caretPosition;
+    }
+
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        EditorStage editorStage = (EditorStage) o;
-        return Objects.equals(currentValue, editorStage.currentValue);
+
+        EditorStage that = (EditorStage) o;
+
+        if (caretPosition != that.caretPosition) return false;
+        return Objects.equals(currentValue, that.currentValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(currentValue);
+        int result = currentValue != null ? currentValue.hashCode() : 0;
+        result = 31 * result + caretPosition;
+        return result;
     }
 }

@@ -8,16 +8,16 @@ import java.util.List;
 public class Test {
     public static void main(String[] args) {
         // создание менеджера изменений
-        EditorStageKeeper manager = new EditorStageKeeper(new EditorStage(""));
+        EditorStageKeeper manager = new EditorStageKeeper(new EditorStage("",0));
 
         // добавление последовательных состояний строки в менеджер
-        manager.addStage(new EditorStage("1"));
-        manager.addStage(new EditorStage("12"));
-        manager.addStage(new EditorStage("123"));
-        manager.addStage(new EditorStage("1"));
-        manager.addStage(new EditorStage("1dscs"));
-        manager.addStage(new EditorStage("1dscs85651"));
-        manager.addStage(new EditorStage("1"));
+        manager.addStage(new EditorStage("1",0));
+        manager.addStage(new EditorStage("12",0));
+        manager.addStage(new EditorStage("123",0));
+        manager.addStage(new EditorStage("1",0));
+        manager.addStage(new EditorStage("1dscs",0));
+        manager.addStage(new EditorStage("1dscs85651",0));
+        manager.addStage(new EditorStage("1",0));
 
         manager.undo();
         manager.redo();

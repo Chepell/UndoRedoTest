@@ -14,7 +14,7 @@ public class EditorStageKeeper {
     // нода на которой находится указатель
     private Node currentIndex;
     // максимальное количество изменений хранимое в списке
-    private final int MAX_HISTORY_LENGTH = 10;
+    private final int MAX_HISTORY_LENGTH = 50;
     // счетчик добавленния в список изменений
     private int changeCounter = 0;
 
@@ -34,7 +34,8 @@ public class EditorStageKeeper {
     public void clear() {
         // Текущее значение сохраняю в головную ноду
         headNode.changeable = currentIndex.changeable;
-        // Обнуляю ссылку справа, весь спискок теперь не имеет прямой ссылки и будет отчищен GC
+        // Обнуляю ссылку справа/слева, весь спискок теперь не имеет прямой ссылки и будет отчищен GC
+        headNode.left = null;
         headNode.right = null;
         // Установка указателя в головную ноду
         currentIndex = headNode;
@@ -64,7 +65,7 @@ public class EditorStageKeeper {
         if (changeCounter < MAX_HISTORY_LENGTH) {
             // обновляю счетчик
             changeCounter++;
-        } else {
+        } else { // Если достигнуто орграничение на длину хранимых изменений, то отбраываю самый старый элемент слева
             // Головной узел сдвигаю вправо
             headNode = headNode.right;
             // Обнуляю у новой головы левый узел
@@ -72,7 +73,7 @@ public class EditorStageKeeper {
         }
     }
 
-    public void refreshChangeable(Changeable changeable) {
+    public void refreshStage(Changeable changeable) {
         currentIndex.changeable = changeable;
     }
 
@@ -103,6 +104,20 @@ public class EditorStageKeeper {
     }
 
     /**
+     * Проверка что указатель находится не на крайнем левом головном узле
+     */
+    private boolean canUndo() {
+        return currentIndex != headNode;
+    }
+
+    /**
+     * Проверка что справа от указателя еще есть узел
+     */
+    private boolean canRedo() {
+        return currentIndex.right != null;
+    }
+
+    /**
      * Сдвиг указателя влево
      */
     private void moveLeft() {
@@ -114,20 +129,6 @@ public class EditorStageKeeper {
      */
     private void moveRight() {
         currentIndex = currentIndex.right;
-    }
-
-    /**
-     * Проверка что указатель находится не на крайнем левом головном узле
-     */
-    public boolean canUndo() {
-        return currentIndex != headNode;
-    }
-
-    /**
-     * Проверка что справа от указателя еще есть узел
-     */
-    public boolean canRedo() {
-        return currentIndex.right != null;
     }
 
     /**
@@ -146,14 +147,14 @@ public class EditorStageKeeper {
         List<Changeable<T>> result = new ArrayList<>();
 
         // перемещаю указатель на первый элемент справа от родительского
-        Node rightNode = headNode.right;
+        Node iterateNode = headNode;
 
         // если справа что-то есть
-        while (rightNode != null) {
+        while (iterateNode != null) {
             // сохраняю содержимое в список
-            result.add(rightNode.changeable);
+            result.add(iterateNode.changeable);
             // сдвигаю указатель вправо
-            rightNode = rightNode.right;
+            iterateNode = iterateNode.right;
         }
         return result;
     }
@@ -172,10 +173,5 @@ public class EditorStageKeeper {
         Node(Changeable changeable) {
             this.changeable = changeable;
         }
-
-        // Конструктор для создания родительского узла списка
-//        Node() {
-//            changeable = new EditorStage();
-//        }
     }
 }
