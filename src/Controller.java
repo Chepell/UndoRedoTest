@@ -1,12 +1,7 @@
-import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-
-import java.util.List;
+import javafx.scene.input.*;
 
 public class Controller {
     @FXML
@@ -29,23 +24,13 @@ public class Controller {
     private boolean backspacePressed;
     private boolean tabPressed;
     private boolean delPressed;
+    private boolean insideString;
+    private boolean inputInside;
 
     @FXML
     void initialize() {
         clipboard = Clipboard.getSystemClipboard();
         manager = new EditorStageKeeper(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
-//        manager.addStage(new EditorStage("1"));
-//        manager.addStage(new EditorStage("2"));
-//        manager.addStage(new EditorStage("3"));
-//        manager.addStage(new EditorStage("4"));
-//        manager.undo();
-//        manager.undo();
-//        manager.addStage(new EditorStage("5"));
-//
-//        textArea.setText(manager.getCurrent().value().toString());
-
-//        textArea.textProperty().addListener(stringChangeListener());
-
 
         // при нажатии кнопки отмены
         undoBtn.setOnAction(actionEvent -> undo());
@@ -54,7 +39,7 @@ public class Controller {
         redoBtn.setOnAction(actionEvent -> redo());
 
         // отчистка истории изменений
-        clearBtn.setOnAction(actionEvent -> manager.clear());
+        clearBtn.setOnAction(actionEvent -> manager.clear(new EditorStage(textArea.getText(), textArea.getCaretPosition())));
 
         // замена стандартных горячих клавиш
         textArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
@@ -65,11 +50,10 @@ public class Controller {
                 } else {
                     undo();
                 }
-//                textArea.positionCaret(textArea.getLength());
             }
         });
 
-        // обработка триггеров
+        // обработка триггеров с клавиатуры
         textArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
             // SPACE
             if (keyEvent.getCode() == KeyCode.SPACE && !spacePressed) {
@@ -126,16 +110,17 @@ public class Controller {
 //                    textArea.positionCaret(newCaretPosition);
 //                }
 
-                // добавление символа не в конце строки. Используется позиция каретки и длина строки
-            } else if (textArea.getCaretPosition() != textArea.getText().length()
-                    && keyEvent.getText().matches("[.\\S]")) {
-                System.out.println("Где-то в середине");
+                // фиксирую вход внутрь строки
+            } else if (textArea.getCaretPosition() != textArea.getText().length() && !insideString
+                    && !keyEvent.isControlDown()) {
+                insideString = true;
+                // ввожу символы внутри строки
+            } else if (insideString && !inputInside && keyEvent.getText().matches(".")
+                    && !keyEvent.isControlDown()) {
+                inputInside = true;
                 manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
             }
 
-//            else if (keyEvent.getCode() != KeyCode.SPACE && keyEvent.getCode() != KeyCode.BACK_SPACE && backspacePressed) {
-//                manager.addStage(new EditorStage(textArea.getText()));
-//            }
 
             if (keyEvent.getCode() != KeyCode.SPACE) {
                 if (spacePressed) {
@@ -155,85 +140,51 @@ public class Controller {
                     manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
                 }
             }
+            refreshIfOutside();
+        });
+
+        // обработка триггеров с мыши
+        textArea.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
+            if (mouseEvent.getButton() == MouseButton.PRIMARY
+                    && textArea.getCaretPosition() != textArea.getText().length() && !insideString) {
+                insideString = true;
+            }
+            refreshIfOutside();
         });
     }
 
+    private void refreshIfOutside() {
+        if (textArea.getCaretPosition() == textArea.getText().length()) {
+            if (insideString) {
+                insideString = false;
+            }
+
+            if (inputInside) {
+                inputInside = false;
+            }
+        }
+    }
+
     private void undo() {
-//        textArea.textProperty().removeListener(stringChangeListener());
         // сохраняю текущее состояние в менеджер
         manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
         // перемещаю указатель по списку изменений влево на одну позицию
         manager.undo();
-        // получаю значение указателя
-        String value = manager.getCurrent().value().toString();
-        int caretPosition = manager.getCurrent().caretPosition();
-
-        // обновляю текст в поле
-        textArea.setText(value);
-        textArea.positionCaret(caretPosition);
+        refreshTextArea();
     }
 
     private void redo() {
         // перемещаю указатель по списку изменений вправо на одну позицию
         manager.redo();
+        refreshTextArea();
+    }
+
+    private void refreshTextArea() {
         // получаю значение указателя
         String value = (String) manager.getCurrent().value();
         int caretPosition = manager.getCurrent().caretPosition();
-
-        System.out.println("value: " + value);
-        System.out.println("caret: " + caretPosition);
-
         // обновляю текст в поле
         textArea.setText(value);
         textArea.positionCaret(caretPosition);
-    }
-
-    private ChangeListener<String> stringChangeListener() {
-        return (observableValue, oldValue, newValue) -> {
-
-            boolean stable00 = newValue.startsWith(oldValue) && newValue.length() > oldValue.length();
-
-            // длина строки не поменялась, но какие-то символы внутри строки изменились
-//            boolean changed00 = !newValue.equals(oldValue) && newValue.length() == oldValue.length();
-//
-//            // длина строки уменьшилась справа и длина строки больше чем длина текущего состояния в менеджере
-//            boolean changed01 = oldValue.startsWith(newValue) && newValue.length() < oldValue.length()
-//                    && oldValue.length() > ((String) manager.getCurrent().value()).length();
-//
-//            // длина строки увеличилась справа и длина строки меньше чем длина текущего состояния в менеджере
-//            boolean changed02 = newValue.startsWith(oldValue) && newValue.length() > oldValue.length()
-//                    && newValue.length() < ((String) manager.getCurrent().value()).length();
-//
-//            // длина строки уменьшилась на какое-то количество символов, но не справа, а в середине или в начале
-//            boolean changed03 = !oldValue.startsWith(newValue) && newValue.length() < oldValue.length();
-//
-//            // длина строки увеличилась на какое-то количество символов, но не справа, а в середине или в начале
-//            boolean changed04 = !newValue.startsWith(oldValue) && newValue.length() > oldValue.length();
-
-
-//            if (stable00) {
-//                manager.refreshStage(new EditorStage(newValue));
-//            } else {
-//                manager.addStage(new EditorStage(newValue));
-//            }
-
-//            if (changed00 || changed01 || changed02 || changed03 || changed04) {
-//                manager.addStage(new EditorStage(newValue));
-//            } else {
-//                manager.refreshStage(new EditorStage(newValue));
-//            }
-
-//            manager.addStage(new EditorStage(newValue));
-//            showChangeList();
-        };
-    }
-
-    private void showChangeList() {
-        System.out.println("*Текущий*список*");
-        List<Changeable<String>> changeableList = manager.getChangeableList();
-        for (Changeable<String> stringChangeable : changeableList) {
-            System.out.println(stringChangeable.value());
-        }
-        System.out.println("****************");
     }
 }

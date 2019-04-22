@@ -31,9 +31,9 @@ public class EditorStageKeeper {
      * Отчистка списка изменений выставлением ссылки на
      * головную ноду и сброс счетчика добавленных изменений
      */
-    public void clear() {
+    public void clear(Changeable changeable) {
         // Текущее значение сохраняю в головную ноду
-        headNode.changeable = currentIndex.changeable;
+        headNode.changeable = changeable;
         // Обнуляю ссылку справа/слева, весь спискок теперь не имеет прямой ссылки и будет отчищен GC
         headNode.left = null;
         headNode.right = null;
@@ -73,9 +73,15 @@ public class EditorStageKeeper {
         }
     }
 
-    public void refreshStage(Changeable changeable) {
-        currentIndex.changeable = changeable;
-    }
+    /**
+     * Обновление последнего состояния в списке
+     */
+//    public void refreshStage(Changeable changeable) {
+//        // проверка что находимся на крайней правой ноде и что состояния не равны
+//        if (currentIndex.right == null && !changeable.equals(currentIndex.changeable)) {
+//            currentIndex.changeable = changeable;
+//        }
+//    }
 
     /**
      * Отмена

@@ -37,7 +37,6 @@ public class EditorStage implements Changeable<String> {
         return caretPosition;
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
