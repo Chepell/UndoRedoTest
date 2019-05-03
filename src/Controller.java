@@ -16,7 +16,7 @@ public class Controller {
     @FXML
     private Button clearBtn;
 
-    private EditorStageKeeper manager;
+    private EditorStageKeeper stageKeeper;
 
     private Clipboard clipboard;
 
@@ -26,24 +26,36 @@ public class Controller {
     private boolean delPressed;
     private boolean insideString;
     private boolean inputInside;
+    private boolean undoPressed = true;
 
     @FXML
     void initialize() {
         clipboard = Clipboard.getSystemClipboard();
-        manager = new EditorStageKeeper(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+        stageKeeper = new EditorStageKeeper(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
 
-        // при нажатии кнопки отмены
-        undoBtn.setOnAction(actionEvent -> undo());
+        // при нажатии кнопки undo
+        undoBtn.setOnAction(actionEvent -> {
+            undo();
+            textArea.requestFocus();
+        });
 
-        // при нажатии кнопки повтора
-        redoBtn.setOnAction(actionEvent -> redo());
+        // при нажатии кнопки redo
+        redoBtn.setOnAction(actionEvent -> {
+            redo();
+            textArea.requestFocus();
+        });
 
-        // отчистка истории изменений
-        clearBtn.setOnAction(actionEvent -> manager.clear(new EditorStage(textArea.getText(), textArea.getCaretPosition())));
+        // при нажатии кнопки clear
+        clearBtn.setOnAction(actionEvent -> {
+            textArea.setText("");
+            textArea.positionCaret(0);
+            stageKeeper.clear(new EditorStage("", 0));
+            textArea.requestFocus();
+        });
 
         // замена стандартных горячих клавиш
         textArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-            if (keyEvent.getCode() == KeyCode.Z && keyEvent.isControlDown()) {
+            if (keyEvent.isControlDown() && keyEvent.getCode().equals(KeyCode.Z)) {
                 keyEvent.consume();
                 if (keyEvent.isShiftDown()) {
                     redo();
@@ -56,71 +68,77 @@ public class Controller {
         // обработка триггеров с клавиатуры
         textArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
             // SPACE
-            if (keyEvent.getCode() == KeyCode.SPACE && !spacePressed) {
+            if (keyEvent.getCode().equals(KeyCode.SPACE) && !spacePressed) {
                 spacePressed = true;
-                manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+                addCurrentStageToKeeper();
                 // BACK_SPACE
-            } else if (keyEvent.getCode() == KeyCode.BACK_SPACE && !backspacePressed) {
+            } else if (keyEvent.getCode().equals(KeyCode.BACK_SPACE) && !backspacePressed) {
                 backspacePressed = true;
-                manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+                addCurrentStageToKeeper();
                 // TAB
-            } else if (keyEvent.getCode() == KeyCode.TAB && !tabPressed) {
+            } else if (keyEvent.getCode().equals(KeyCode.TAB) && !tabPressed) {
                 tabPressed = true;
-                manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+                addCurrentStageToKeeper();
                 // ENTER
-            } else if (keyEvent.getCode() == KeyCode.ENTER) {
-                manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+            } else if (keyEvent.getCode().equals(KeyCode.ENTER)) {
+                addCurrentStageToKeeper();
                 // DEL
-            } else if (keyEvent.getCode() == KeyCode.DELETE && !delPressed) {
+            } else if (keyEvent.getCode().equals(KeyCode.DELETE) && !delPressed) {
                 delPressed = true;
-                manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
-                // Ctrl+V
-            } else if (keyEvent.getCode() == KeyCode.V && keyEvent.isControlDown()) {
-                manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+                addCurrentStageToKeeper();
+                // Ctrl+V / Вставить
+            } else if (keyEvent.isControlDown() && keyEvent.getCode().equals(KeyCode.V)) {
+                keyEvent.consume();
+                // Только если в буфере есть строка
+                if (clipboard.hasString()) {
+                    addCurrentStageToKeeper();
 
-//                keyEvent.consume();
-//                if (clipboard.hasString()) {
-//                    manager.addStage(new EditorStage(textArea.getText()));
-//
-//                    var text = textArea.getText();
-//                    var caretPosition = textArea.getCaretPosition();
-//                    var clipboardString = clipboard.getString();
-//                    var newText = text.substring(0, caretPosition) + clipboardString + text.substring(caretPosition);
-//                    var newCaretPosition = caretPosition + clipboardString.length();
-//
-//                    textArea.setText(newText);
-//                    textArea.positionCaret(newCaretPosition);
-//                }
+                    var text = textArea.getText();
+                    var caretPosition = textArea.getCaretPosition();
 
-                // Ctrl+X
-            } else if (keyEvent.getCode() == KeyCode.X && keyEvent.isControlDown()) {
-                manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+                    var clipboardString = clipboard.getString();
+                    var newText = text.substring(0, caretPosition) + clipboardString + text.substring(caretPosition);
+                    var newCaretPosition = caretPosition + clipboardString.length();
 
-//                keyEvent.consume();
-//                if (clipboard.hasString()) {
-//                    manager.addStage(new EditorStage(textArea.getText()));
-//
-//                    var text = textArea.getText();
-//                    var caretPosition = textArea.getCaretPosition();
-//                    var clipboardString = clipboard.getString();
-//                    var newText = text.substring(0, caretPosition) + clipboardString + text.substring(caretPosition);
-//                    var newCaretPosition = caretPosition + clipboardString.length();
-//
-//                    textArea.setText(newText);
-//                    textArea.positionCaret(newCaretPosition);
-//                }
+                    textArea.setText(newText);
+                    textArea.positionCaret(newCaretPosition);
+                }
+                // Ctrl+X / Вырезать
+            } else if (keyEvent.isControlDown() && keyEvent.getCode().equals(KeyCode.X)) {
+                keyEvent.consume();
+                var selectedText = textArea.getSelectedText();
+                // Если есть выделенный текст
+                if (selectedText != null && !selectedText.isEmpty()) {
+                    addCurrentStageToKeeper();
 
+                    var text = textArea.getText();
+                    var caretPosition = textArea.getCaretPosition();
+
+                    ClipboardContent content = new ClipboardContent();
+                    content.putString(selectedText);
+                    clipboard.setContent(content);
+
+                    // если выделение происходило слева на право, то корректирую позицию курсора
+                    if (caretPosition != text.indexOf(selectedText)) {
+                        caretPosition -= selectedText.length();
+                    }
+
+                    var newText = text.replace(selectedText, "");
+
+                    textArea.setText(newText);
+                    textArea.positionCaret(caretPosition);
+                }
                 // фиксирую вход внутрь строки
             } else if (textArea.getCaretPosition() != textArea.getText().length() && !insideString
                     && !keyEvent.isControlDown()) {
                 insideString = true;
                 // ввожу символы внутри строки
             } else if (insideString && !inputInside && keyEvent.getText().matches(".")
-                    && !keyEvent.isControlDown()) {
+                    && !keyEvent.isControlDown() && !keyEvent.isShiftDown() && !keyEvent.isAltDown()) {
                 inputInside = true;
-                manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+//                undoPressed = false;
+                addCurrentStageToKeeper();
             }
-
 
             if (keyEvent.getCode() != KeyCode.SPACE) {
                 if (spacePressed) {
@@ -137,9 +155,16 @@ public class Controller {
             if (keyEvent.getCode() != KeyCode.BACK_SPACE) {
                 if (backspacePressed) {
                     backspacePressed = false;
-                    manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+                    addCurrentStageToKeeper();
                 }
             }
+
+            // отмена фиксации первого нажатия кнопки undo после ввода какого-либо символа
+            if (keyEvent.getText().matches(".") && !keyEvent.isControlDown() && !keyEvent.isShiftDown()
+                    && !keyEvent.isAltDown()) {
+                undoPressed = false;
+            }
+
             refreshIfOutside();
         });
 
@@ -153,7 +178,46 @@ public class Controller {
         });
     }
 
+    private void addCurrentStageToKeeper() {
+        stageKeeper.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+    }
+
+    private void undo() {
+        // сохраняю состояние только если еще не было нажатия кнопки undo
+        if (!undoPressed) {
+            // сохраняю нажатие кнопки undo
+            undoPressed = true;
+            // сохраняю текущее состояние в менеджер
+            addCurrentStageToKeeper();
+        }
+        // перемещаю указатель по списку изменений влево на одну позицию
+        stageKeeper.undo();
+        refreshTextArea();
+    }
+
+    private void redo() {
+        // перемещаю указатель по списку изменений вправо на одну позицию
+        stageKeeper.redo();
+        refreshTextArea();
+    }
+
+    /**
+     * метод обновляет состояние в поле беря знаяения из списка сохранений
+     */
+    private void refreshTextArea() {
+        // получаю значение указателя
+        var value = (String) stageKeeper.getCurrent().value();
+        var caretPosition = stageKeeper.getCurrent().caretPosition();
+        // обновляю текст и каретку в поле
+        textArea.setText(value);
+        textArea.positionCaret(caretPosition);
+    }
+
+    /**
+     * проверка расположения каретки и обновление флага
+     */
     private void refreshIfOutside() {
+        // если каретка вконце строки
         if (textArea.getCaretPosition() == textArea.getText().length()) {
             if (insideString) {
                 insideString = false;
@@ -163,28 +227,5 @@ public class Controller {
                 inputInside = false;
             }
         }
-    }
-
-    private void undo() {
-        // сохраняю текущее состояние в менеджер
-        manager.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
-        // перемещаю указатель по списку изменений влево на одну позицию
-        manager.undo();
-        refreshTextArea();
-    }
-
-    private void redo() {
-        // перемещаю указатель по списку изменений вправо на одну позицию
-        manager.redo();
-        refreshTextArea();
-    }
-
-    private void refreshTextArea() {
-        // получаю значение указателя
-        String value = (String) manager.getCurrent().value();
-        int caretPosition = manager.getCurrent().caretPosition();
-        // обновляю текст в поле
-        textArea.setText(value);
-        textArea.positionCaret(caretPosition);
     }
 }

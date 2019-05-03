@@ -49,9 +49,11 @@ public class EditorStageKeeper {
     public void addStage(Changeable changeable) {
         // если добавляемое изменение уже есть в списке, то ничего не делать дальше
         if (changeable.equals(currentIndex.changeable)) {
-            return;
+            System.out.println("Такое состояние уже есть в списке: " + changeable.value());
+//            return;
         }
-        System.out.println("Добавляю: " + changeable.value());
+
+        System.out.println("Добавляю в список состояние:\n" + changeable.value());
         // Создаю новый узел с объектом изменений
         Node newNode = new Node(changeable);
         // Относительно текущего узла, на котором находится указатель, новый узел должен быть справа
@@ -74,16 +76,6 @@ public class EditorStageKeeper {
     }
 
     /**
-     * Обновление последнего состояния в списке
-     */
-//    public void refreshStage(Changeable changeable) {
-//        // проверка что находимся на крайней правой ноде и что состояния не равны
-//        if (currentIndex.right == null && !changeable.equals(currentIndex.changeable)) {
-//            currentIndex.changeable = changeable;
-//        }
-//    }
-
-    /**
      * Отмена
      */
     public void undo() {
@@ -92,7 +84,7 @@ public class EditorStageKeeper {
             moveLeft();
             changeCounter--;
             // Вызов метода интерфейса
-            currentIndex.changeable.undo();
+//            currentIndex.changeable.undo();
         }
     }
 
@@ -105,7 +97,7 @@ public class EditorStageKeeper {
             moveRight();
             changeCounter++;
             // Вызов метода интерфейса для возврата
-            currentIndex.changeable.redo();
+//            currentIndex.changeable.redo();
         }
     }
 
