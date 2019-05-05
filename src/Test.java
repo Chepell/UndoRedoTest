@@ -29,10 +29,10 @@ public class Test {
 //        manager.undo();
 //        manager.redo();
 
-        List<Changeable<String>> changeableList = manager.getChangeableList();
+        List<EditorStage> editorStageList = manager.getEditorStageList();
 
-        for (Changeable<String> changeable : changeableList) {
-            System.out.println(changeable.value());
+        for (EditorStage editorStage : editorStageList) {
+            System.out.println(editorStage.value());
         }
     }
 }

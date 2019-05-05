@@ -22,8 +22,8 @@ public class EditorStageKeeper {
      * Создание менеджера изменений
      * установка указателя на головную ноду
      */
-    public EditorStageKeeper(Changeable initialValue) {
-        headNode = new Node(initialValue);
+    public EditorStageKeeper(EditorStage editorStage) {
+        headNode = new Node(editorStage);
         currentIndex = headNode;
     }
 
@@ -31,9 +31,9 @@ public class EditorStageKeeper {
      * Отчистка списка изменений выставлением ссылки на
      * головную ноду и сброс счетчика добавленных изменений
      */
-    public void clear(Changeable changeable) {
+    public void clear(EditorStage editorStage) {
         // Текущее значение сохраняю в головную ноду
-        headNode.changeable = changeable;
+        headNode.editorStage = editorStage;
         // Обнуляю ссылку справа/слева, весь спискок теперь не имеет прямой ссылки и будет отчищен GC
         headNode.left = null;
         headNode.right = null;
@@ -46,16 +46,17 @@ public class EditorStageKeeper {
     /**
      * Добавление объекта изменений в менеджер
      */
-    public void addStage(Changeable changeable) {
+    public void addStage(EditorStage editorStage) {
+
         // если добавляемое изменение уже есть в списке, то ничего не делать дальше
-        if (changeable.equals(currentIndex.changeable)) {
-            System.out.println("Такое состояние уже есть в списке: " + changeable.value());
-//            return;
+        if (editorStage.equals(currentIndex.editorStage)) {
+            System.out.println("$$$ Такое состояние уже есть в списке: " + editorStage.value());
+            return;
         }
 
-        System.out.println("Добавляю в список состояние:\n" + changeable.value());
+        System.out.println("$$$ Добавляю в список состояние:\n" + editorStage.value());
         // Создаю новый узел с объектом изменений
-        Node newNode = new Node(changeable);
+        Node newNode = new Node(editorStage);
         // Относительно текущего узла, на котором находится указатель, новый узел должен быть справа
         currentIndex.right = newNode;
         // И для нового узла текущий узел находится слева
@@ -83,8 +84,6 @@ public class EditorStageKeeper {
             // Сдвиг указателя на левый узел
             moveLeft();
             changeCounter--;
-            // Вызов метода интерфейса
-//            currentIndex.changeable.undo();
         }
     }
 
@@ -96,8 +95,6 @@ public class EditorStageKeeper {
             // Сдвиг указателя на правый узел
             moveRight();
             changeCounter++;
-            // Вызов метода интерфейса для возврата
-//            currentIndex.changeable.redo();
         }
     }
 
@@ -133,16 +130,16 @@ public class EditorStageKeeper {
      * Возвращает содержание узла на котором находится указатель
      * в виде объекта реализующего интерфейс Changeable
      */
-    public <T> Changeable<T> getCurrent() {
-        return currentIndex.changeable;
+    public EditorStage getCurrent() {
+        return currentIndex.editorStage;
     }
 
     /**
      * Возвращает все изменения сохраненные в менеджере в виде ArrayList
      */
-    public <T> List<Changeable<T>> getChangeableList() {
+    public List<EditorStage> getEditorStageList() {
         // создаю пустой список для наполнения его изменениями
-        List<Changeable<T>> result = new ArrayList<>();
+        List<EditorStage> editorStageList = new ArrayList<>();
 
         // перемещаю указатель на первый элемент справа от родительского
         Node iterateNode = headNode;
@@ -150,11 +147,11 @@ public class EditorStageKeeper {
         // если справа что-то есть
         while (iterateNode != null) {
             // сохраняю содержимое в список
-            result.add(iterateNode.changeable);
+            editorStageList.add(iterateNode.editorStage);
             // сдвигаю указатель вправо
             iterateNode = iterateNode.right;
         }
-        return result;
+        return editorStageList;
     }
 
     /**
@@ -165,11 +162,11 @@ public class EditorStageKeeper {
         private Node left = null;
         private Node right = null;
         // Содержание узла в виде объекта реализующего интерфейс Changeable
-        private Changeable changeable;
+        private EditorStage editorStage;
 
         // Конструктор для создания узлов и изменениями и добавления их в связанный список
-        Node(Changeable changeable) {
-            this.changeable = changeable;
+        Node(EditorStage editorStage) {
+            this.editorStage = editorStage;
         }
     }
 }
