@@ -5,7 +5,7 @@ import java.util.List;
  * Artem Voytenko
  * 16.04.2019
  * <p>
- * Менеджер изменений
+ * Менеджер хранения состояний
  */
 
 public class EditorStageKeeper {
@@ -46,15 +46,16 @@ public class EditorStageKeeper {
     /**
      * Добавление объекта изменений в менеджер
      */
-    public void addStage(EditorStage editorStage) {
+    public boolean addStage(EditorStage editorStage) {
 
         // если добавляемое изменение уже есть в списке, то ничего не делать дальше
         if (editorStage.equals(currentIndex.editorStage)) {
             System.out.println("$$$ Такое состояние уже есть в списке: " + editorStage.value());
-            return;
+            return false;
         }
 
         System.out.println("$$$ Добавляю в список состояние:\n" + editorStage.value());
+        System.out.println("$$$ Курсор на позиции: " + editorStage.caretPosition());
         // Создаю новый узел с объектом изменений
         Node newNode = new Node(editorStage);
         // Относительно текущего узла, на котором находится указатель, новый узел должен быть справа
@@ -74,15 +75,18 @@ public class EditorStageKeeper {
             // Обнуляю у новой головы левый узел
             headNode.left = null;
         }
+
+        return true;
     }
 
     /**
      * Отмена
      */
     public void undo() {
-        if (canUndo()) {
+        // Проверка что указатель находится не на крайнем левом головном узле
+        if (currentIndex != headNode) {
             // Сдвиг указателя на левый узел
-            moveLeft();
+            currentIndex = currentIndex.left;
             changeCounter--;
         }
     }
@@ -91,39 +95,12 @@ public class EditorStageKeeper {
      * Возврат
      */
     public void redo() {
-        if (canRedo()) {
+        // Проверка что справа от указателя еще есть узел
+        if (currentIndex.right != null) {
             // Сдвиг указателя на правый узел
-            moveRight();
+            currentIndex = currentIndex.right;
             changeCounter++;
         }
-    }
-
-    /**
-     * Проверка что указатель находится не на крайнем левом головном узле
-     */
-    private boolean canUndo() {
-        return currentIndex != headNode;
-    }
-
-    /**
-     * Проверка что справа от указателя еще есть узел
-     */
-    private boolean canRedo() {
-        return currentIndex.right != null;
-    }
-
-    /**
-     * Сдвиг указателя влево
-     */
-    private void moveLeft() {
-        currentIndex = currentIndex.left;
-    }
-
-    /**
-     * Сдвиг указателя вправо
-     */
-    private void moveRight() {
-        currentIndex = currentIndex.right;
     }
 
     /**

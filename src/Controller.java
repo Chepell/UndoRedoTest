@@ -16,7 +16,7 @@ public class Controller {
     @FXML
     private Button clearBtn;
 
-    private EditorStageKeeper stageKeeper;
+    private EditorStageKeeper editorStageKeeper;
 
     private Clipboard clipboard;
 
@@ -31,7 +31,7 @@ public class Controller {
     @FXML
     void initialize() {
         clipboard = Clipboard.getSystemClipboard();
-        stageKeeper = new EditorStageKeeper(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+        editorStageKeeper = new EditorStageKeeper(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
 
         // при нажатии кнопки undo
         undoBtn.setOnAction(actionEvent -> {
@@ -47,7 +47,7 @@ public class Controller {
 
         // при нажатии кнопки clear
         clearBtn.setOnAction(actionEvent -> {
-            stageKeeper.clear(new EditorStage());
+            editorStageKeeper.clear(new EditorStage());
             refreshTextArea();
             textArea.requestFocus();
         });
@@ -85,30 +85,30 @@ public class Controller {
                 }
 
                 // отмена фиксации первого нажатия кнопки undo после ввода любого символа
-                if (keyEvent.getText().matches(".")) {
+                if (keyEvent.getText().matches(".") || keyEvent.getCode().equals(KeyCode.ENTER)) {
                     undoPressed = false;
                 }
 
                 // отмена фиксации нажатия пробела
-                if (keyEvent.getCode().equals(KeyCode.SPACE) && spacePressed) {
+                if (!keyEvent.getCode().equals(KeyCode.SPACE) && spacePressed) {
                     spacePressed = false;
                 }
 
                 // отмена фиксации нажатия таба
-                if (keyEvent.getCode().equals(KeyCode.TAB) && tabPressed) {
+                if (!keyEvent.getCode().equals(KeyCode.TAB) && tabPressed) {
                     tabPressed = false;
                 }
 
                 // отмена фиксации нажатия бекспейса и так же необходимо запомнить
                 // состояние при выходе из серии последовательных нажатий бекспейсов
-                if (keyEvent.getCode().equals(KeyCode.BACK_SPACE) && backspacePressed) {
+                if (!keyEvent.getCode().equals(KeyCode.BACK_SPACE) && backspacePressed) {
                     backspacePressed = false;
                     addCurrentStageToKeeper();
                 }
             } else { // тут ловлю сочетания клавиш
                 // перекрываю стандартные обработчики
                 keyEvent.consume();
-                // замена стандартных горячих клавиш
+                // замена стандартных горячих клавиш Ctrl+Z / Ctrl+Shift+Z
                 if (keyEvent.isControlDown() && keyEvent.getCode().equals(KeyCode.Z)) {
                     if (keyEvent.isShiftDown()) {
                         redo();
@@ -127,10 +127,10 @@ public class Controller {
 
                         var clipboardString = clipboard.getString();
                         var newText = text.substring(0, caretPosition) + clipboardString + text.substring(caretPosition);
-                        var newCaretPosition = caretPosition + clipboardString.length();
+                        caretPosition += clipboardString.length();
 
                         textArea.setText(newText);
-                        textArea.positionCaret(newCaretPosition);
+                        textArea.positionCaret(caretPosition);
                     }
                     // Ctrl+X / Вырезать
                 } else if (keyEvent.isControlDown() && keyEvent.getCode().equals(KeyCode.X)) {
@@ -170,8 +170,8 @@ public class Controller {
             // Для отладки, вывести текущий список
             if (keyEvent.isControlDown() && keyEvent.getCode().equals(KeyCode.NUMPAD9)) {
                 System.out.println("#*****************#");
-                for (EditorStage editorStage : stageKeeper.getEditorStageList()) {
-                    if (editorStage.equals(stageKeeper.getCurrent())) {
+                for (EditorStage editorStage : editorStageKeeper.getEditorStageList()) {
+                    if (editorStage.equals(editorStageKeeper.getCurrent())) {
                         System.out.println("* " + editorStage.value());
                     } else {
                         System.out.println(editorStage.value());
@@ -198,24 +198,29 @@ public class Controller {
             // сохраняю нажатие кнопки undo
             undoPressed = true;
             // сохраняю текущее состояние в менеджер
-            addCurrentStageToKeeper();
+            if (addCurrentStageToKeeper()) {
+                // если состояние сохранилось (нет такого же состояния в списке),
+                // то перемещаю указатель в списке состояний влево
+                editorStageKeeper.undo();
+            }
+        } else { // если идет серия нажатий кнопки undo, то просто перемещаюсь по списку состояний
+            // перемещаю указатель по списку изменений влево на одну позицию
+            editorStageKeeper.undo();
         }
-        // перемещаю указатель по списку изменений влево на одну позицию
-        stageKeeper.undo();
         refreshTextArea();
     }
 
     private void redo() {
         // перемещаю указатель по списку изменений вправо на одну позицию
-        stageKeeper.redo();
+        editorStageKeeper.redo();
         refreshTextArea();
     }
 
     /**
      * метод сохранения состояния в список
      */
-    private void addCurrentStageToKeeper() {
-        stageKeeper.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+    private boolean addCurrentStageToKeeper() {
+        return editorStageKeeper.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
     }
 
 
@@ -224,8 +229,8 @@ public class Controller {
      */
     private void refreshTextArea() {
         // получаю значение указателя
-        var value = (String) stageKeeper.getCurrent().value();
-        var caretPosition = stageKeeper.getCurrent().caretPosition();
+        var value = editorStageKeeper.getCurrent().value();
+        var caretPosition = editorStageKeeper.getCurrent().caretPosition();
         // обновляю текст и каретку в поле
         textArea.setText(value);
         textArea.positionCaret(caretPosition);
