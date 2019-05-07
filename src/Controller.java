@@ -78,11 +78,11 @@ public class Controller {
                 }
 
                 // ввожу первый символ внутри строки
-                if (insideString && !inputInside && keyEvent.getText().matches(".")) {
-                    System.out.println("Ввожу символ внутри строки");
-                    inputInside = true;
-                    addCurrentStageToKeeper();
-                }
+//                if (insideString && !inputInside && keyEvent.getText().matches(".")) {
+//                    System.out.println("Ввожу символ внутри строки");
+//                    inputInside = true;
+//                    addCurrentStageToKeeper();
+//                }
 
                 // отмена фиксации первого нажатия кнопки undo после ввода любого символа
                 if (keyEvent.getText().matches(".") || keyEvent.getCode().equals(KeyCode.ENTER)) {
@@ -97,6 +97,11 @@ public class Controller {
                 // отмена фиксации нажатия таба
                 if (!keyEvent.getCode().equals(KeyCode.TAB) && tabPressed) {
                     tabPressed = false;
+                }
+
+                // отмена фиксации нажатия таба
+                if (!keyEvent.getCode().equals(KeyCode.DELETE) && delPressed) {
+                    delPressed = false;
                 }
 
                 // отмена фиксации нажатия бекспейса и так же необходимо запомнить
@@ -130,7 +135,8 @@ public class Controller {
                         caretPosition += clipboardString.length();
 
                         textArea.setText(newText);
-                        textArea.positionCaret(caretPosition);
+//                        textArea.positionCaret(caretPosition);
+                        textArea.positionCaret(newText.length());
                     }
                     // Ctrl+X / Вырезать
                 } else if (keyEvent.isControlDown() && keyEvent.getCode().equals(KeyCode.X)) {
@@ -154,18 +160,19 @@ public class Controller {
                         var newText = text.replace(selectedText, "");
 
                         textArea.setText(newText);
-                        textArea.positionCaret(caretPosition);
+//                        textArea.positionCaret(caretPosition);
+                        textArea.positionCaret(newText.length());
                     }
                 }
             }
 
             // фиксирую вход внутрь строки
-            if (isCaretInside() && !insideString) {
-                System.out.println("$$$ Фиксирую вход внутрь строки");
-                insideString = true;
-            }
+//            if (isCaretInside() && !insideString) {
+//                System.out.println("$$$ Фиксирую вход внутрь строки");
+//                insideString = true;
+//            }
 
-            checkCaretInTheEnd();
+//            checkCaretInTheEnd();
 
             // Для отладки, вывести текущий список
             if (keyEvent.isControlDown() && keyEvent.getCode().equals(KeyCode.NUMPAD9)) {
@@ -183,13 +190,13 @@ public class Controller {
         });
 
         // обработка триггеров с мыши
-        textArea.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
-            if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && isCaretInside() && !insideString) {
-                System.out.println("$$$Mouse Фиксирую вход внутрь строки");
-                insideString = true;
-            }
-            checkCaretInTheEnd();
-        });
+//        textArea.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
+//            if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && isCaretInside() && !insideString) {
+//                System.out.println("$$$Mouse Фиксирую вход внутрь строки");
+//                insideString = true;
+//            }
+//            checkCaretInTheEnd();
+//        });
     }
 
     private void undo() {
@@ -220,7 +227,8 @@ public class Controller {
      * метод сохранения состояния в список
      */
     private boolean addCurrentStageToKeeper() {
-        return editorStageKeeper.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+//        return editorStageKeeper.addStage(new EditorStage(textArea.getText(), textArea.getCaretPosition()));
+        return editorStageKeeper.addStage(new EditorStage(textArea.getText(), textArea.getText().length()));
     }
 
 
@@ -233,7 +241,8 @@ public class Controller {
         var caretPosition = editorStageKeeper.getCurrent().caretPosition();
         // обновляю текст и каретку в поле
         textArea.setText(value);
-        textArea.positionCaret(caretPosition);
+//        textArea.positionCaret(caretPosition);
+        textArea.positionCaret(value.length());
     }
 
     /**
